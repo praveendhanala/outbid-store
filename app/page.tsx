@@ -18,24 +18,7 @@ export default async function Home({
 
   return (
     <div className="mx-auto max-w-2xl px-4">
-      <Header />
-
-      <div className="flex flex-col items-center gap-3 py-10 text-center">
-        <StatsTicker startingVisitors={48210} online={312} />
-        <h1 className="font-display text-4xl font-bold">outbid.store</h1>
-        <p className="max-w-sm text-sm text-muted">
-          No ads, no revenue share. Just outbid your competitors to rank #1.
-        </p>
-        <p className="text-xs text-muted">
-          This side project made{" "}
-          <span className="font-mono font-semibold text-foreground">$0</span>{" "}
-          since launch 6 hours ago.
-        </p>
-      </div>
-
-      <Leaderboard initialCategory={initialCategory} />
-
-      <Footer />
+      <h1>outbid.store</h1>
     </div>
   );
 }
