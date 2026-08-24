@@ -1,1 +1,1 @@
-# outbid-store
+# outbid.store
