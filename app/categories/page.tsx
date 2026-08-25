@@ -1,19 +1,24 @@
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { CATEGORIES, CATEGORY_INFO, INITIAL_STORES } from "@/lib/data";
+import { CATEGORIES, CATEGORY_INFO } from "@/lib/data";
 import { formatUsd, formatNumber } from "@/lib/format";
+import { getLeaderboard } from "@/app/actions";
 
-export default function CategoriesPage() {
+export const dynamic = "force-dynamic";
+
+export default async function CategoriesPage() {
   const categories = CATEGORIES.filter((c) => c !== "all");
+  const stores = await getLeaderboard();
 
   const rows = categories.map((category) => {
-    const stores = INITIAL_STORES.filter((s) => s.category === category);
-    const topBid = stores.reduce((max, s) => Math.max(max, s.bid), 0);
+    // A store counts toward every category it's listed under.
+    const inCategory = stores.filter((s) => s.categories.includes(category));
+    const topBid = inCategory.reduce((max, s) => Math.max(max, s.bid), 0);
     return {
       category,
       description: CATEGORY_INFO[category],
-      storeCount: stores.length,
+      storeCount: inCategory.length,
       topBid,
     };
   });

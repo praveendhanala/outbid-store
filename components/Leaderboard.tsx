@@ -2,71 +2,50 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { INITIAL_STORES, MIN_BID, type Category, type Store } from "@/lib/data";
+import { MIN_BID, type Category, type Store } from "@/lib/data";
 import { formatNumber, formatUsd } from "@/lib/format";
+import { ClaimSpotForm } from "./ClaimSpotForm";
 import { CategoryPills } from "./CategoryPills";
 
-function resortByBid(stores: Store[]): Store[] {
-  return [...stores]
-    .sort((a, b) => b.bid - a.bid)
-    .map((store, index) => ({ ...store, rank: index + 1 }));
-}
-
 export function Leaderboard({
+  initialStores,
   initialCategory = "all",
 }: {
+  initialStores: Store[];
   initialCategory?: Category;
 }) {
-  const [stores, setStores] = useState<Store[]>(() => resortByBid(INITIAL_STORES));
+  const [stores, setStores] = useState<Store[]>(initialStores);
+  const [prevInitialStores, setPrevInitialStores] =
+    useState<Store[]>(initialStores);
+
+  // If Next re-renders this page with fresh data (e.g. after a
+  // confirmed bid revalidates it), sync the local copy. Done during
+  // render (React's recommended pattern for this) rather than in an
+  // effect.
+  if (initialStores !== prevInitialStores) {
+    setPrevInitialStores(initialStores);
+    setStores(initialStores);
+  }
+
   const [category, setCategory] = useState<Category>(initialCategory);
-  const [bidTargetId, setBidTargetId] = useState<string | null>(null);
-  const [bidValue, setBidValue] = useState("");
-  const [bidError, setBidError] = useState<string | null>(null);
+  // Which row's claim form is open, and what amount to prefill it with.
+  // Tracked separately from the amount itself so two rows that happen to
+  // share the same bid+1 don't both appear "open" at once. "leader" is a
+  // sentinel for the #1 card, since it isn't in the sliced list below.
+  const [openRowId, setOpenRowId] = useState<string | null>(null);
+  const [claimPrefill, setClaimPrefill] = useState(MIN_BID);
+
+  function openClaimForm(rowId: string, prefill: number) {
+    setOpenRowId(rowId);
+    setClaimPrefill(prefill);
+  }
 
   const filtered = useMemo(() => {
     if (category === "all") return stores;
-    return stores.filter((store) => store.category === category);
+    return stores.filter((store) => store.categories.includes(category));
   }, [stores, category]);
 
-  const leader = stores[0];
-
-  function openBid(storeId: string, currentBid: number) {
-    setBidTargetId(storeId);
-    setBidValue(String(currentBid + 1));
-    setBidError(null);
-  }
-
-  function closeBid() {
-    setBidTargetId(null);
-    setBidValue("");
-    setBidError(null);
-  }
-
-  function submitBid(store: Store) {
-    const amount = Number(bidValue);
-    if (!bidValue || Number.isNaN(amount)) {
-      setBidError("Enter a bid amount.");
-      return;
-    }
-    if (amount <= store.bid) {
-      setBidError(`Bid must be higher than ${formatUsd(store.bid)}.`);
-      return;
-    }
-    if (amount < MIN_BID) {
-      setBidError(`Minimum bid is ${formatUsd(MIN_BID)}.`);
-      return;
-    }
-    setStores((prev) =>
-      resortByBid(
-        prev.map((s) =>
-          s.id === store.id
-            ? { ...s, bid: amount, addedAgo: "just now", clicks: s.clicks }
-            : s
-        )
-      )
-    );
-    closeBid();
-  }
+  const leader = filtered[0];
 
   return (
     <div id="leaderboard">
@@ -87,8 +66,8 @@ export function Leaderboard({
                 </span>
               </p>
               <p className="text-xs text-muted">
-                {leader.category} &middot; {leader.addedAgo} &middot;{" "}
-                {formatNumber(leader.clicks)} clicks
+                {leader.categories.join(", ")} &middot; {leader.addedAgo}{" "}
+                &middot; {formatNumber(leader.clicks)} clicks
               </p>
             </div>
             <span className="font-mono text-lg font-bold">
@@ -97,19 +76,16 @@ export function Leaderboard({
           </div>
           <p className="mb-4 text-sm text-muted">{leader.description}</p>
 
-          {bidTargetId === leader.id ? (
-            <BidForm
-              store={leader}
-              value={bidValue}
-              error={bidError}
-              onChange={setBidValue}
-              onCancel={closeBid}
-              onSubmit={() => submitBid(leader)}
+          {openRowId === "leader" ? (
+            <ClaimSpotForm
+              stores={stores}
+              initialAmount={claimPrefill}
+              onCancel={() => setOpenRowId(null)}
             />
           ) : (
             <button
               type="button"
-              onClick={() => openBid(leader.id, leader.bid)}
+              onClick={() => openClaimForm("leader", leader.bid + 1)}
               className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             >
               claim rank #1 for {formatUsd(leader.bid + 1)}
@@ -132,31 +108,28 @@ export function Leaderboard({
                   <span className="text-muted">&middot; {store.domain}</span>
                 </p>
                 <p className="text-xs text-muted">
-                  {store.category} &middot; {store.addedAgo}
+                  {store.categories.join(", ")} &middot; {store.addedAgo}
                 </p>
               </div>
               <span className="font-mono text-sm font-semibold">
                 {formatUsd(store.bid)}
               </span>
-              {bidTargetId !== store.id && (
+              {openRowId !== store.id && (
                 <button
                   type="button"
-                  onClick={() => openBid(store.id, store.bid)}
+                  onClick={() => openClaimForm(store.id, store.bid + 1)}
                   className="shrink-0 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-foreground/40 hover:text-foreground"
                 >
                   outbid
                 </button>
               )}
             </div>
-            {bidTargetId === store.id && (
+            {openRowId === store.id && (
               <div className="mt-3 pl-10">
-                <BidForm
-                  store={store}
-                  value={bidValue}
-                  error={bidError}
-                  onChange={setBidValue}
-                  onCancel={closeBid}
-                  onSubmit={() => submitBid(store)}
+                <ClaimSpotForm
+                  stores={stores}
+                  initialAmount={claimPrefill}
+                  onCancel={() => setOpenRowId(null)}
                 />
               </div>
             )}
@@ -174,61 +147,13 @@ export function Leaderboard({
           href="/submit"
           className="rounded-md border border-border px-5 py-2.5 text-sm font-medium transition-colors hover:border-foreground/40"
         >
-          submit your store
+          claim a spot
         </Link>
         <p className="text-xs text-muted">
-          minimum bid {formatUsd(MIN_BID)} &middot; rank is the bid, nothing
-          else
+          minimum bid {formatUsd(MIN_BID)} &middot; every bid creates a new
+          listing — rank is just where your amount lands
         </p>
       </div>
-    </div>
-  );
-}
-
-function BidForm({
-  store,
-  value,
-  error,
-  onChange,
-  onCancel,
-  onSubmit,
-}: {
-  store: Store;
-  value: string;
-  error: string | null;
-  onChange: (value: string) => void;
-  onCancel: () => void;
-  onSubmit: () => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2 rounded-md border border-border bg-background p-3">
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted">$</span>
-        <input
-          type="number"
-          inputMode="numeric"
-          min={store.bid + 1}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-md border border-border bg-surface px-2.5 py-1.5 font-mono text-sm outline-none focus:border-foreground/40"
-          aria-label={`Bid amount to outbid ${store.name}`}
-        />
-        <button
-          type="button"
-          onClick={onSubmit}
-          className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-        >
-          place bid
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="shrink-0 rounded-md border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:text-foreground"
-        >
-          cancel
-        </button>
-      </div>
-      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 }

@@ -1,11 +1,14 @@
-import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
-import { INITIAL_STORES } from "@/lib/data";
 import { formatUsd, formatNumber } from "@/lib/format";
+import { getLeaderboard } from "@/app/actions";
+import Link from "next/link";
 
-export default function AboutPage() {
-  const topBid = Math.max(...INITIAL_STORES.map((s) => s.bid));
-  const totalRevenue = INITIAL_STORES.reduce((sum, s) => sum + s.bid, 0);
+export const dynamic = "force-dynamic";
+
+export default async function AboutPage() {
+  const stores = await getLeaderboard();
+  const topBid = stores.length ? Math.max(...stores.map((s) => s.bid)) : 0;
+  const totalBid = stores.reduce((sum, s) => sum + s.bid, 0);
 
   return (
     <PageShell title="about">
@@ -22,9 +25,9 @@ export default function AboutPage() {
       </p>
 
       <div className="grid grid-cols-3 gap-3 rounded-xl border border-border bg-surface p-4">
-        <Stat label="stores listed" value={formatNumber(INITIAL_STORES.length)} />
+        <Stat label="stores listed" value={formatNumber(stores.length)} />
         <Stat label="highest bid" value={formatUsd(topBid)} />
-        <Stat label="total bid" value={formatUsd(totalRevenue)} />
+        <Stat label="total bid" value={formatUsd(totalBid)} />
       </div>
 
       <div>
@@ -42,8 +45,11 @@ export default function AboutPage() {
         <p>
           It isn&apos;t a recommendation engine and it isn&apos;t vetted
           curation. Rank reflects what a store paid, not a review of its
-          quality. See the <Link href="/disclaimer" className="underline">disclaimer</Link> for
-          more on that.
+          quality. See the{" "}
+          <Link href="/disclaimer" className="underline">
+            disclaimer
+          </Link>{" "}
+          for more on that.
         </p>
       </div>
     </PageShell>
