@@ -58,9 +58,9 @@ export function Leaderboard({
       <CategoryPills active={category} onChange={setCategory} />
 
       {leader && (
-        <div className="my-5 rounded-xl border border-border bg-surface p-5">
+        <div className="my-5 rounded-xl border border-accent bg-surface p-5">
           <div className="mb-3 flex items-center gap-3">
-            <span className="font-mono text-xs font-bold text-muted">
+            <span className="font-mono text-xl font-bold text-accent">
               #{leader.rank}
             </span>
             <a
@@ -72,26 +72,30 @@ export function Leaderboard({
               <StoreIcon
                 domain={leader.domain}
                 name={leader.name}
-                className="h-8 w-8 shrink-0 rounded-lg"
+                className="h-12 w-12 shrink-0 rounded-lg"
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">
-                  {leader.name}{" "}
-                  <span className="font-normal text-muted">
+                <p className="truncate font-semibold">
+                  <span className="text-md">
+                    {leader.name}{" "}
+                  </span>
+                  <span className="text-xs font-normal text-muted">
                     &middot; {leader.domain}
                   </span>
                 </p>
+                <p className="mb-2 text-sm text-muted">{leader.description}</p>
                 <p className="text-xs text-muted">
                   {leader.categories.join(", ")} &middot; {leader.addedAgo}{" "}
-                  &middot; {formatNumber(leader.clicks)} clicks
+                  &middot;
+                  <span className="font-semibold">{formatNumber(leader.clicks)} clicks</span>
                 </p>
               </div>
             </a>
-            <span className="font-mono text-lg font-bold">
+            <span className="text-xl font-semibold text-accent">
               {formatUsd(leader.bid)}
             </span>
           </div>
-          <p className="mb-4 text-sm text-muted">{leader.description}</p>
+          <p className="hidden mb-4 text-sm text-muted">{leader.description}</p>
 
           {openRowId === "leader" ? (
             <ClaimSpotForm
@@ -103,7 +107,7 @@ export function Leaderboard({
             <button
               type="button"
               onClick={() => openClaimForm("leader", leader.bid + 1)}
-              className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 cursor-pointer"
             >
               claim rank #1 for {formatUsd(leader.bid + 1)}
             </button>
@@ -115,7 +119,7 @@ export function Leaderboard({
         {filtered.slice(1).map((store) => (
           <li key={store.id} className="py-3.5">
             <div className="flex items-center gap-3">
-              <span className="w-7 font-mono text-xs text-muted">
+              <span className="w-8 font-mono font-bold text-md text-muted">
                 #{store.rank}
               </span>
               <a
@@ -127,27 +131,31 @@ export function Leaderboard({
                 <StoreIcon
                   domain={store.domain}
                   name={store.name}
-                  className="h-7 w-7 shrink-0 rounded-md"
+                  className="h-10 w-10 shrink-0 rounded-md"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">
-                    {store.name}{" "}
-                    <span className="text-muted">&middot; {store.domain}</span>
+                  <p className="truncate">
+                    <span className="text-md text-semibold">
+                      {store.name}{" "}
+                    </span>
+                    <span className="text-xs text-muted">&middot; {store.domain}</span>
                   </p>
+                  <p className="mb-1 text-sm text-muted">{store.description}</p>
                   <p className="text-xs text-muted">
                     {store.categories.join(", ")} &middot; {store.addedAgo}{" "}
-                    &middot; {formatNumber(store.clicks)} clicks
+                    &middot;
+                    <span className="font-semibold">{formatNumber(store.clicks)} clicks</span>
                   </p>
                 </div>
               </a>
-              <span className="font-mono text-sm font-semibold">
+              <span className="text-sm font-semibold">
                 {formatUsd(store.bid)}
               </span>
               {openRowId !== store.id && (
                 <button
                   type="button"
                   onClick={() => openClaimForm(store.id, store.bid + 1)}
-                  className="shrink-0 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-foreground/40 hover:text-foreground"
+                  className="shrink-0 rounded-md border border-border px-3 py-1 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-foreground cursor-pointer"
                 >
                   outbid
                 </button>
@@ -174,13 +182,14 @@ export function Leaderboard({
       <div className="flex flex-col items-center gap-3 py-8 text-center">
         <Link
           href="/submit"
-          className="rounded-md border border-border px-5 py-2.5 text-sm font-medium transition-colors hover:border-foreground/40"
+          className="rounded-md bg-accent px-8 py-2 text-md font-semibold text-white transition-opacity hover:opacity-90 cursor-pointer"
         >
           claim a spot
         </Link>
+
         <p className="text-xs text-muted">
-          minimum bid {formatUsd(MIN_BID)} &middot; every bid creates a new
-          listing — rank is just where your amount lands
+          minimum bid {formatUsd(MIN_BID)}
+          {/* &middot; every bid creates a new listing — rank is just where your amount lands */}
         </p>
       </div>
     </div>

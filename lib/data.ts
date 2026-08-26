@@ -28,8 +28,8 @@ export const MAX_CATEGORIES_PER_STORE = 3;
 // Character limits for store detail fields — enforced both as maxLength
 // on the inputs and server-side in app/actions.ts's validateStoreDetails.
 export const STORE_NAME_MAX_LENGTH = 60;
-export const STORE_DOMAIN_MAX_LENGTH = 60;
-export const STORE_DESCRIPTION_MAX_LENGTH = 140;
+export const STORE_DOMAIN_MAX_LENGTH = 90;
+export const STORE_DESCRIPTION_MAX_LENGTH = 160;
 
 export type Store = {
   id: string;

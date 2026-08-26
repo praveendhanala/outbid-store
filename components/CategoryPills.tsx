@@ -21,10 +21,10 @@ export function CategoryPills({
             key={category}
             type="button"
             onClick={() => onChange(category)}
-            className={`whitespace-nowrap rounded-md border px-3 py-1.5 text-sm transition-colors ${
+            className={`whitespace-nowrap rounded-md border px-2 py-1 text-sm transition-colors ${
               isActive
                 ? "border-foreground bg-foreground text-background"
-                : "border-border text-muted hover:text-foreground hover:border-foreground/40"
+                : "border-border text-muted hover:text-foreground hover:border-foreground/40 cursor-pointer"
             }`}
           >
             {category}
