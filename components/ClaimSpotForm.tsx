@@ -5,6 +5,9 @@ import {
   CATEGORIES,
   MAX_CATEGORIES_PER_STORE,
   MIN_BID,
+  STORE_DESCRIPTION_MAX_LENGTH,
+  STORE_DOMAIN_MAX_LENGTH,
+  STORE_NAME_MAX_LENGTH,
   type Category,
   type Store,
 } from "@/lib/data";
@@ -22,7 +25,6 @@ export function ClaimSpotForm({
 }) {
   const [amount, setAmount] = useState(String(initialAmount ?? MIN_BID));
   const [email, setEmail] = useState("");
-  const [addDetailsNow, setAddDetailsNow] = useState(false);
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<
@@ -66,31 +68,23 @@ export function ClaimSpotForm({
       setError("Enter your email.");
       return;
     }
-    if (addDetailsNow) {
-      if (!name.trim() || !domain.trim() || !description.trim()) {
-        setError("Fill in every store detail, or switch to adding them after payment.");
-        return;
-      }
-      if (selectedCategories.length === 0) {
-        setError("Pick at least one category.");
-        return;
-      }
+    if (!name.trim() || !domain.trim() || !description.trim()) {
+      setError("Fill in every store detail.");
+      return;
+    }
+    if (selectedCategories.length === 0) {
+      setError("Pick at least one category.");
+      return;
     }
 
     setError(null);
     setIsSubmitting(true);
-    const result = await createSubmissionCheckout(
-      parsedAmount,
-      email,
-      addDetailsNow
-        ? {
-            name,
-            domain,
-            categories: selectedCategories,
-            description,
-          }
-        : undefined
-    );
+    const result = await createSubmissionCheckout(parsedAmount, email, {
+      name,
+      domain,
+      categories: selectedCategories,
+      description,
+    });
 
     if (result.error || !result.checkoutUrl) {
       setIsSubmitting(false);
@@ -142,92 +136,63 @@ export function ClaimSpotForm({
         />
       </label>
 
-      <div className="flex gap-2 rounded-md border border-border p-1 text-xs">
-        <button
-          type="button"
-          onClick={() => setAddDetailsNow(false)}
-          className={`flex-1 rounded px-2 py-1.5 transition-colors ${
-            !addDetailsNow
-              ? "bg-foreground text-background"
-              : "text-muted hover:text-foreground"
-          }`}
-        >
-          add store details after paying
-        </button>
-        <button
-          type="button"
-          onClick={() => setAddDetailsNow(true)}
-          className={`flex-1 rounded px-2 py-1.5 transition-colors ${
-            addDetailsNow
-              ? "bg-foreground text-background"
-              : "text-muted hover:text-foreground"
-          }`}
-        >
-          add store details now
-        </button>
-      </div>
-
-      {addDetailsNow && (
-        <div className="flex flex-col gap-3 rounded-md border border-border bg-background p-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-muted">Store name</span>
-            <input
-              value={name}
-              disabled={isSubmitting}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Sneaker Hub"
-              className="w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40 disabled:opacity-60"
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-muted">Domain</span>
-            <input
-              value={domain}
-              disabled={isSubmitting}
-              onChange={(e) => setDomain(e.target.value)}
-              placeholder="sneakerhub.com"
-              className="w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40 disabled:opacity-60"
-            />
-          </label>
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs text-muted">
-              Categories ({selectedCategories.length}/{MAX_CATEGORIES_PER_STORE})
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((c) => {
-                const isSelected = selectedCategories.includes(c);
-                return (
-                  <button
-                    key={c}
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={() => toggleCategory(c)}
-                    aria-pressed={isSelected}
-                    className={`rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-60 ${
-                      isSelected
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-border text-muted hover:text-foreground hover:border-foreground/40"
-                    }`}
-                  >
-                    {c}
-                  </button>
-                );
-              })}
-            </div>
+      <div className="flex flex-col gap-3 rounded-md border border-border bg-background p-3">
+        <p className="text-xs text-muted">
+          Store details — required before payment.
+        </p>
+        <CharLimitedField
+          label="Store name"
+          value={name}
+          onChange={setName}
+          placeholder="Sneaker Hub"
+          maxLength={STORE_NAME_MAX_LENGTH}
+          disabled={isSubmitting}
+        />
+        <CharLimitedField
+          label="Domain"
+          value={domain}
+          onChange={setDomain}
+          placeholder="sneakerhub.com"
+          maxLength={STORE_DOMAIN_MAX_LENGTH}
+          disabled={isSubmitting}
+          hint="no https:// needed"
+        />
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs text-muted">
+            Categories ({selectedCategories.length}/{MAX_CATEGORIES_PER_STORE})
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((c) => {
+              const isSelected = selectedCategories.includes(c);
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => toggleCategory(c)}
+                  aria-pressed={isSelected}
+                  className={`rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-60 ${
+                    isSelected
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border text-muted hover:text-foreground hover:border-foreground/40"
+                  }`}
+                >
+                  {c}
+                </button>
+              );
+            })}
           </div>
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-muted">Description</span>
-            <textarea
-              value={description}
-              disabled={isSubmitting}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="One line on what the store sells."
-              rows={2}
-              className="w-full resize-none rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40 disabled:opacity-60"
-            />
-          </label>
         </div>
-      )}
+        <CharLimitedField
+          label="Description"
+          value={description}
+          onChange={setDescription}
+          placeholder="One line on what the store sells."
+          maxLength={STORE_DESCRIPTION_MAX_LENGTH}
+          disabled={isSubmitting}
+          multiline
+        />
+      </div>
 
       {error && <p className="text-xs text-red-600">{error}</p>}
 
@@ -251,5 +216,60 @@ export function ClaimSpotForm({
         )}
       </div>
     </form>
+  );
+}
+
+function CharLimitedField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  maxLength,
+  disabled,
+  multiline,
+  hint,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  maxLength: number;
+  disabled: boolean;
+  multiline?: boolean;
+  hint?: string;
+}) {
+  const sharedClassName =
+    "w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40 disabled:opacity-60";
+
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="flex items-center justify-between text-xs text-muted">
+        <span>{label}</span>
+        <span>
+          {value.length}/{maxLength}
+        </span>
+      </span>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          disabled={disabled}
+          rows={2}
+          className={`resize-none ${sharedClassName}`}
+        />
+      ) : (
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          disabled={disabled}
+          className={sharedClassName}
+        />
+      )}
+      {hint && <span className="text-xs text-muted">{hint}</span>}
+    </label>
   );
 }

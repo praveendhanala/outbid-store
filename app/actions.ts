@@ -4,10 +4,13 @@ import { revalidatePath } from "next/cache";
 import { supabase } from "@/lib/supabase/server";
 import { createDodoClient, getDodoProductId, toCents } from "@/lib/dodo/client";
 import { confirmSucceededPayment, markFailedPayment } from "@/lib/bids/confirm";
-import { isValidEmail } from "@/lib/validate";
+import { isValidEmail, normalizeDomain } from "@/lib/validate";
 import {
   MAX_CATEGORIES_PER_STORE,
   MIN_BID,
+  STORE_DESCRIPTION_MAX_LENGTH,
+  STORE_DOMAIN_MAX_LENGTH,
+  STORE_NAME_MAX_LENGTH,
   type Category,
   type Store,
 } from "@/lib/data";
@@ -81,6 +84,15 @@ function validateStoreDetails(input: StoreDetailsInput): string | null {
   if (!input.name.trim() || !input.domain.trim() || !input.description.trim()) {
     return "Fill in every field.";
   }
+  if (input.name.trim().length > STORE_NAME_MAX_LENGTH) {
+    return `Store name must be ${STORE_NAME_MAX_LENGTH} characters or fewer.`;
+  }
+  if (input.domain.trim().length > STORE_DOMAIN_MAX_LENGTH) {
+    return `Domain must be ${STORE_DOMAIN_MAX_LENGTH} characters or fewer.`;
+  }
+  if (input.description.trim().length > STORE_DESCRIPTION_MAX_LENGTH) {
+    return `Description must be ${STORE_DESCRIPTION_MAX_LENGTH} characters or fewer.`;
+  }
   if (input.categories.length === 0) {
     return "Pick at least one category.";
   }
@@ -94,14 +106,16 @@ function validateStoreDetails(input: StoreDetailsInput): string | null {
  * Start a checkout to claim a new spot on the board. Every bid creates a
  * brand-new listing — this never targets or modifies an existing store,
  * even when the amount was pre-filled from an "outbid" shortcut next to
- * one. Store details are optional here: pass them to have the store
- * created automatically the moment payment confirms, or omit them to add
- * them afterward on /bid/return.
+ * one. Store details are required up front; the store is created the
+ * moment payment confirms (see lib/bids/confirm.ts). The only case they
+ * end up added later is the finalizeStoreSubmission fallback below, for
+ * the rare event the domain got taken by someone else between this
+ * check and payment confirming.
  */
 export async function createSubmissionCheckout(
   amount: number,
   customerEmail: string,
-  details?: StoreDetailsInput
+  details: StoreDetailsInput
 ): Promise<{ checkoutUrl: string | null; error: string | null }> {
   if (!isValidEmail(customerEmail)) {
     return { checkoutUrl: null, error: "Enter a valid email." };
@@ -109,25 +123,22 @@ export async function createSubmissionCheckout(
   if (!Number.isFinite(amount) || amount < MIN_BID) {
     return { checkoutUrl: null, error: `Minimum bid is $${MIN_BID}.` };
   }
-  if (details) {
-    const detailsError = validateStoreDetails(details);
-    if (detailsError) return { checkoutUrl: null, error: detailsError };
-  }
+  const normalizedDetails = { ...details, domain: normalizeDomain(details.domain) };
+  const detailsError = validateStoreDetails(normalizedDetails);
+  if (detailsError) return { checkoutUrl: null, error: detailsError };
 
   //const supabase = createServerSupabaseClient();
 
-  if (details) {
-    // Early, friendly check — the real guarantee is still the unique
-    // constraint at store-creation time, since this could still race
-    // with another pending bid for the same domain.
-    const { data: existing } = await supabase
-      .from("stores")
-      .select("id")
-      .eq("domain", details.domain.trim())
-      .maybeSingle();
-    if (existing) {
-      return { checkoutUrl: null, error: "That domain is already listed." };
-    }
+  // Early, friendly check — the real guarantee is still the unique
+  // constraint at store-creation time, since this could still race with
+  // another pending bid for the same domain.
+  const { data: existing } = await supabase
+    .from("stores")
+    .select("id")
+    .eq("domain", normalizedDetails.domain)
+    .maybeSingle();
+  if (existing) {
+    return { checkoutUrl: null, error: "That domain is already listed." };
   }
 
   const { data: bid, error: insertError } = await supabase
@@ -136,10 +147,10 @@ export async function createSubmissionCheckout(
       store_id: null,
       amount,
       customer_email: customerEmail,
-      pending_name: details?.name.trim() ?? null,
-      pending_domain: details?.domain.trim() ?? null,
-      pending_categories: details?.categories ?? null,
-      pending_description: details?.description.trim() ?? null,
+      pending_name: normalizedDetails.name.trim(),
+      pending_domain: normalizedDetails.domain,
+      pending_categories: normalizedDetails.categories,
+      pending_description: normalizedDetails.description.trim(),
     })
     .select("id")
     .single();
@@ -255,7 +266,8 @@ export async function finalizeStoreSubmission(
   bidId: string,
   input: StoreDetailsInput
 ): Promise<{ error: string | null; storeId: string | null }> {
-  const detailsError = validateStoreDetails(input);
+  const normalizedInput = { ...input, domain: normalizeDomain(input.domain) };
+  const detailsError = validateStoreDetails(normalizedInput);
   if (detailsError) return { error: detailsError, storeId: null };
 
   //const supabase = createServerSupabaseClient();
@@ -280,9 +292,9 @@ export async function finalizeStoreSubmission(
   const { data: store, error: insertStoreError } = await supabase
     .from("stores")
     .insert({
-      name: input.name.trim(),
-      domain: input.domain.trim(),
-      description: input.description.trim(),
+      name: normalizedInput.name.trim(),
+      domain: normalizedInput.domain,
+      description: normalizedInput.description.trim(),
       bid: bid.amount,
       status: "active",
     })

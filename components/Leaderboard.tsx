@@ -6,6 +6,7 @@ import { MIN_BID, type Category, type Store } from "@/lib/data";
 import { formatNumber, formatUsd } from "@/lib/format";
 import { ClaimSpotForm } from "./ClaimSpotForm";
 import { CategoryPills } from "./CategoryPills";
+import { StoreIcon } from "./StoreIcon";
 
 export function Leaderboard({
   initialStores,
@@ -47,6 +48,11 @@ export function Leaderboard({
 
   const leader = filtered[0];
 
+  // Store links below use plain <a> tags, not next/link's <Link>.
+  // Link prefetches routes that scroll into view, which would fire the
+  // /go redirect (and inflate the click count) just from being visible —
+  // not from an actual click.
+
   return (
     <div id="leaderboard">
       <CategoryPills active={category} onChange={setCategory} />
@@ -57,19 +63,30 @@ export function Leaderboard({
             <span className="font-mono text-xs font-bold text-muted">
               #{leader.rank}
             </span>
-            <div className="h-8 w-8 shrink-0 rounded-lg bg-accent-tint" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">
-                {leader.name}{" "}
-                <span className="font-normal text-muted">
-                  &middot; {leader.domain}
-                </span>
-              </p>
-              <p className="text-xs text-muted">
-                {leader.categories.join(", ")} &middot; {leader.addedAgo}{" "}
-                &middot; {formatNumber(leader.clicks)} clicks
-              </p>
-            </div>
+            <a
+              href={`/go/${leader.id}`}
+              target="_blank"
+              rel="noopener noreferrer sponsored"
+              className="flex min-w-0 flex-1 items-center gap-3 rounded-md -m-1 p-1 transition-colors hover:bg-background"
+            >
+              <StoreIcon
+                domain={leader.domain}
+                name={leader.name}
+                className="h-8 w-8 shrink-0 rounded-lg"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">
+                  {leader.name}{" "}
+                  <span className="font-normal text-muted">
+                    &middot; {leader.domain}
+                  </span>
+                </p>
+                <p className="text-xs text-muted">
+                  {leader.categories.join(", ")} &middot; {leader.addedAgo}{" "}
+                  &middot; {formatNumber(leader.clicks)} clicks
+                </p>
+              </div>
+            </a>
             <span className="font-mono text-lg font-bold">
               {formatUsd(leader.bid)}
             </span>
@@ -101,16 +118,28 @@ export function Leaderboard({
               <span className="w-7 font-mono text-xs text-muted">
                 #{store.rank}
               </span>
-              <div className="h-7 w-7 shrink-0 rounded-md bg-accent-tint" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm">
-                  {store.name}{" "}
-                  <span className="text-muted">&middot; {store.domain}</span>
-                </p>
-                <p className="text-xs text-muted">
-                  {store.categories.join(", ")} &middot; {store.addedAgo}
-                </p>
-              </div>
+              <a
+                href={`/go/${store.id}`}
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-md -m-1 p-1 transition-colors hover:bg-surface"
+              >
+                <StoreIcon
+                  domain={store.domain}
+                  name={store.name}
+                  className="h-7 w-7 shrink-0 rounded-md"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm">
+                    {store.name}{" "}
+                    <span className="text-muted">&middot; {store.domain}</span>
+                  </p>
+                  <p className="text-xs text-muted">
+                    {store.categories.join(", ")} &middot; {store.addedAgo}{" "}
+                    &middot; {formatNumber(store.clicks)} clicks
+                  </p>
+                </div>
+              </a>
               <span className="font-mono text-sm font-semibold">
                 {formatUsd(store.bid)}
               </span>

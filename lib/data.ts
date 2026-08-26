@@ -25,6 +25,12 @@ export const MIN_BID = 5;
 // constant so it's a one-line change if you decide to raise or lower it.
 export const MAX_CATEGORIES_PER_STORE = 3;
 
+// Character limits for store detail fields — enforced both as maxLength
+// on the inputs and server-side in app/actions.ts's validateStoreDetails.
+export const STORE_NAME_MAX_LENGTH = 60;
+export const STORE_DOMAIN_MAX_LENGTH = 60;
+export const STORE_DESCRIPTION_MAX_LENGTH = 140;
+
 export type Store = {
   id: string;
   rank: number;

@@ -20,7 +20,7 @@ export default async function SubmitPage() {
         <p className="mb-8 max-w-lg text-sm text-muted">
           Pay to claim a new listing slot — your bid decides where you land,
           not any existing store. Minimum bid is {formatUsd(MIN_BID)}. Add
-          your store&apos;s details now or right after payment.
+          your store&apos;s details below before paying.
         </p>
 
         <div className="max-w-sm">

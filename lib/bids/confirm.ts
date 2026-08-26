@@ -1,5 +1,6 @@
 import "server-only";
 import { supabase } from "@/lib/supabase/server";
+import { normalizeDomain } from "@/lib/validate";
 
 type BidRow = {
   id: string;
@@ -63,9 +64,9 @@ export async function confirmSucceededPayment(
   const { data: store, error: insertStoreError } = await supabase
     .from("stores")
     .insert({
-      name: bid.pending_name,
-      domain: bid.pending_domain,
-      description: bid.pending_description,
+      name: bid.pending_name as string,
+      domain: normalizeDomain(bid.pending_domain as string),
+      description: bid.pending_description as string,
       bid: bid.amount,
       status: "active",
     })

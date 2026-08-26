@@ -5,6 +5,9 @@ import Link from "next/link";
 import {
   CATEGORIES,
   MAX_CATEGORIES_PER_STORE,
+  STORE_DESCRIPTION_MAX_LENGTH,
+  STORE_DOMAIN_MAX_LENGTH,
+  STORE_NAME_MAX_LENGTH,
   type Category,
 } from "@/lib/data";
 import { formatUsd } from "@/lib/format";
@@ -238,6 +241,7 @@ function StoreDetailsForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Sneaker Hub"
+            maxLength={STORE_NAME_MAX_LENGTH}
             disabled={isSubmitting}
             className="w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40 disabled:opacity-60"
           />
@@ -247,9 +251,11 @@ function StoreDetailsForm({
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
             placeholder="sneakerhub.com"
+            maxLength={STORE_DOMAIN_MAX_LENGTH}
             disabled={isSubmitting}
             className="w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40 disabled:opacity-60"
           />
+          <span className="text-xs text-muted">no https:// needed</span>
         </Field>
 
         <div className="flex flex-col gap-1.5">
@@ -285,6 +291,7 @@ function StoreDetailsForm({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="One line on what the store sells."
             rows={2}
+            maxLength={STORE_DESCRIPTION_MAX_LENGTH}
             disabled={isSubmitting}
             className="w-full resize-none rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40 disabled:opacity-60"
           />

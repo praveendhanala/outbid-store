@@ -74,25 +74,60 @@ the webhook:
 directly by a client-facing action — only by `lib/bids/confirm.ts`.
 
 ## Data model
-- `stores` — created only by `finalizeStoreSubmission`, already
-  `status: 'active'` at that point (payment is confirmed before the row
-  exists). Only `active` stores are ever returned by `getLeaderboard`.
+- `stores` — created only by payment confirmation (either automatically
+  right after checkout, or via `finalizeStoreSubmission` for the rare
+  domain-collision recovery case), already `status: 'active'` at that
+  point. Only `active` stores are ever returned by `getLeaderboard`.
+  `clicks` is incremented atomically by the `increment_store_clicks` SQL
+  function — never via a read-then-write from application code, which
+  would race under concurrent clicks.
 - `categories` — reference table, mirrors `lib/data.ts`'s `CATEGORY_INFO`.
 - `store_categories` — join table; a store can belong to
   `MAX_CATEGORIES_PER_STORE` categories (currently 3, `lib/data.ts`).
 - `bids` — one row per checkout attempt, not just successful ones.
-  `store_id` is null for a new-listing bid until
-  `finalizeStoreSubmission` runs. Holds `customer_email`, so RLS locks it
-  down with no public read policy at all — only the service role
-  (server-side) can touch it.
+  `store_id` is null until a store is created for it. Holds
+  `customer_email`, so RLS locks it down with no public read policy at
+  all — only the service role (server-side) can touch it.
+
+## Click tracking
+Store cards don't link directly to the store's site — they link to
+`/go/[storeId]`, which increments the click count, then 302-redirects to
+`https://<domain>`. The increment itself is deferred past the redirect
+response using Next's `after()` — the person's browser starts navigating
+to the store immediately, without waiting on that extra database
+round trip.
+
+Domains are always stored bare (no protocol) — `lib/validate.ts`'s
+`normalizeDomain` strips an accidental `https://` a person might paste
+into the domain field, applied both when a submission is saved and
+again, defensively, right before building the redirect URL. Without
+this, a domain saved as `https://sneakerhub.com` would redirect to
+`https://https://sneakerhub.com`.
+
+**Rage-click / double-click handling:** `/go` sets a short-lived
+(`60s`), `httpOnly` cookie listing recently-clicked store ids. A repeat
+click on the same store within that window still redirects, but doesn't
+increment again. This is a lightweight heuristic scoped to one browser,
+not a hard rate limit — it stops the extremely common "clicked it three
+times because nothing seemed to happen" pattern, but doesn't stop
+someone deliberately inflating a count with multiple browsers, incognito
+windows, or a script. A more robust version would track by IP (or a
+signed session id) in a database table instead of a client-trusted
+cookie — worth doing before this matters for real money.
+
+Store links use plain `<a>` tags rather than `next/link`'s `<Link>`,
+specifically to avoid Link's viewport-prefetching triggering `/go` (and
+inflating the count) just from a card scrolling into view.
 
 ## Pages
 - `/` — the leaderboard (supports `?category=` to pre-filter)
 - `/categories` — grid of every category with store count and top bid
-- `/submit` — "claim a spot" — collects just amount + email, redirects to
-  Dodo checkout
-- `/bid/return` — polls payment status after checkout; for a new listing,
-  shows the store-details form once payment is confirmed
+- `/submit` — "claim a spot" — amount, email, and store details, all
+  required before payment
+- `/bid/return` — polls payment status after checkout; only shows a
+  details form in the rare case a submitted domain got taken by someone
+  else between form-fill and payment confirming
+- `/go/[storeId]` — click-tracking redirect (see above), not a page
 - `/about`, `/rules`, `/faqs`, `/terms`, `/privacy`, `/disclaimer`, `/contact`
 
 `/contact` is still client-side only (no backend) — it validates and shows
@@ -100,21 +135,26 @@ a confirmation but doesn't send anywhere yet.
 
 ## Structure
 - `app/actions.ts` — server actions: `getLeaderboard`,
-  `createBidCheckout`, `createSubmissionCheckout`, `checkBidStatus`,
-  `finalizeStoreSubmission`
+  `createSubmissionCheckout`, `checkBidStatus`, `finalizeStoreSubmission`
+- `app/go/[storeId]/route.ts` — click-tracking redirect
 - `app/api/webhooks/dodo/route.ts` — verifies the Dodo signature, then
   delegates to `lib/bids/confirm.ts`
 - `lib/bids/confirm.ts` — the only code that writes `bids.status` to
-  `succeeded`/`failed`/`needs_refund`; shared by the webhook and by
-  `checkBidStatus`'s fallback check, so the race-condition and refund
-  logic only exists in one place
+  `succeeded`/`failed`; shared by the webhook and by `checkBidStatus`'s
+  fallback check
 - `app/bid/return/page.tsx` + `components/BidReturnClient.tsx` —
-  post-checkout polling and the store-details form
+  post-checkout polling and the (rare) recovery details form
 - `app/*/page.tsx` — one route per page above
-- `components/Leaderboard.tsx` — the leaderboard UI; bidding redirects to
-  Dodo checkout rather than writing locally
+- `components/Leaderboard.tsx` — the leaderboard UI; "outbid" just
+  pre-fills `ClaimSpotForm`'s amount, never targets a store
+- `components/ClaimSpotForm.tsx` — shared bid + store-details form (used
+  inline in the leaderboard and standalone on `/submit`), with the live
+  rank preview
+- `components/StoreIcon.tsx` — store logo via Google's favicon service,
+  falls back to a plain colored square on load failure
 - `components/PageShell.tsx` — shared layout for the text/legal pages
-- `lib/data.ts` — categories, `MAX_CATEGORIES_PER_STORE`, `MIN_BID`, types
+- `lib/data.ts` — categories, `MAX_CATEGORIES_PER_STORE`, `MIN_BID`,
+  `STORE_*_MAX_LENGTH`, types
 - `lib/supabase/server.ts` — server-only Supabase client
 - `lib/dodo/client.ts` — server-only Dodo client + cents helper
 - `lib/validate.ts` — shared email validation
@@ -127,14 +167,14 @@ a confirmation but doesn't send anywhere yet.
    and never finishes it — harmless (no orphaned `stores` row, since
    those are only created after confirmation) but worth a cleanup job
    eventually.
-3. `needs_refund` bids currently just get flagged (and an automatic
-   refund attempted) — there's no admin view to see that list. Worth a
-   simple internal page or a Supabase saved query for now.
-4. Webhook payload field names (`payload.data.payment_id`,
+3. Webhook payload field names (`payload.data.payment_id`,
    `payload.data.metadata`, etc.) are based on Dodo's published docs and
    examples — verify them against a real test-mode webhook delivery
    before going live. The webhook route logs every event type and
    payment id it receives (`console.log`) — check your server logs if a
    bid isn't confirming to see what Dodo is actually sending.
+4. Click-count dedup is a client-trusted cookie, scoped to one browser —
+   see "Click tracking" above for what a harder-to-game version would
+   need.
 5. Replace the cosmetic visitor counter in `StatsTicker` with real
    analytics (e.g. datafa.st, which is what outbid.lol switched to).

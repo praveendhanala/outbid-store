@@ -123,6 +123,20 @@ create trigger bids_set_updated_at
   for each row
   execute function set_updated_at();
 
+-- Atomic increment so concurrent clicks can't race each other the way a
+-- read-then-write from application code could. Returns the new count.
+create or replace function increment_store_clicks(target_id uuid)
+returns integer as $$
+declare
+  new_count integer;
+begin
+  update stores set clicks = clicks + 1
+  where id = target_id
+  returning clicks into new_count;
+  return new_count;
+end;
+$$ language plpgsql;
+
 -- Row level security. Reads are public for stores/categories; writes go
 -- through server actions using the service role key, which bypasses RLS,
 -- so no INSERT/UPDATE policies are needed for the app to work as built.
