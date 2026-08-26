@@ -1,83 +1,109 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import {
+  sendContactMessage,
+  type ContactState,
+} from "@/app/actions/contact";
+
+const initialState: ContactState = {
+  success: false,
+  message: "",
+};
 
 export default function ContactPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim() || !email.trim() || !message.trim()) {
-      setError("Fill in every field.");
-      return;
-    }
-    if (!email.includes("@")) {
-      setError("Enter a valid email.");
-      return;
-    }
-    setError(null);
-    // No backend wired up yet — this just confirms locally.
-    // Wire this to an email API route or a form service before launch.
-    setSent(true);
-  }
+  const [state, formAction, pending] = useActionState(
+    sendContactMessage,
+    initialState
+  );
 
   return (
     <div className="mx-auto max-w-2xl px-4">
       <Header />
+
       <div className="py-10">
         <h1 className="font-display mb-2 text-3xl font-bold">contact</h1>
+
         <p className="mb-8 max-w-lg text-sm text-muted">
           Questions about a listing, a bid, or the board in general.
         </p>
 
-        {sent ? (
-          <p className="rounded-xl border border-border bg-surface p-4 text-sm">
-            Message received. We&apos;ll get back to you at {email}.
-          </p>
+        {state.success ? (
+          <div className="rounded-xl border border-border bg-surface p-4 text-sm">
+            {state.message}
+          </div>
         ) : (
           <form
-            onSubmit={handleSubmit}
+            action={formAction}
             className="flex max-w-sm flex-col gap-3"
           >
             <Field label="Name">
               <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                name="name"
+                type="text"
+                required
+                maxLength={100}
+                autoComplete="name"
                 className="w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40"
               />
             </Field>
+
             <Field label="Email">
               <input
+                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                required
+                maxLength={254}
+                autoComplete="email"
                 className="w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40"
               />
             </Field>
+
             <Field label="Message">
               <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={4}
+                name="message"
+                required
+                maxLength={5000}
+                rows={5}
                 className="w-full resize-none rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40"
               />
             </Field>
-            {error && <p className="text-xs text-red-600">{error}</p>}
+
+            {/* Honeypot */}
+            <div
+              aria-hidden="true"
+              className="absolute -left-[9999px] h-0 w-0 overflow-hidden"
+            >
+              <label>
+                Website
+                <input
+                  name="website"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </label>
+            </div>
+
+            {state.message && (
+              <p className="text-xs text-red-600">
+                {state.message}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              disabled={pending}
+              className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              send message
+              {pending ? "sending..." : "send message"}
             </button>
           </form>
         )}
       </div>
+
       <Footer />
     </div>
   );

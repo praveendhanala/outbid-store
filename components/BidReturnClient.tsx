@@ -117,7 +117,7 @@ export function BidReturnClient({ bidId }: { bidId: string }) {
   return (
     <StatusMessage
       title="payment confirmed"
-      body="Your bid is live on the leaderboard."
+      body="Your store is live on the leaderboard."
     >
       <Link
         href="/"
