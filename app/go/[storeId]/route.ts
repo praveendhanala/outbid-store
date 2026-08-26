@@ -53,7 +53,7 @@ export async function GET(
   // app/actions.ts and lib/bids/confirm.ts. This second normalization
   // just protects against any row that predates that, or was written
   // directly (e.g. supabase/seed.sql).
-  const destination = `https://${normalizeDomain(store.domain)}`;
+  const destination = `https://${normalizeDomain(store.domain)}?utm_source=outbid.store`;
   const response = NextResponse.redirect(destination);
 
   const recentClicks = parseRecentClicks(request.cookies.get(CLICK_COOKIE)?.value);
