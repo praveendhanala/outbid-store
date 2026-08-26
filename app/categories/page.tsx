@@ -11,19 +11,24 @@ export default async function CategoriesPage() {
   const categories = CATEGORIES.filter((c) => c !== "all");
   const stores = await getLeaderboard();
 
-  const rows = categories.map((category) => {
-    // A store counts toward every category it's listed under.
-    const inCategory = stores.filter((s) => s.categories.includes(category));
-    const topBid = inCategory.reduce((max, s) => Math.max(max, s.bid), 0);
+  const rows = categories
+    .map((category) => {
+      // A store counts toward every category it's listed under.
+      const inCategory = stores.filter((s) => s.categories.includes(category));
+      const topBid = inCategory.reduce((max, s) => Math.max(max, s.bid), 0);
 
-    return {
-      category,
-      description: CATEGORY_INFO[category],
-      storeCount: inCategory.length,
-      topBid,
-    };
-  })
-  .sort((a, b) => b.topBid - a.topBid);
+      return {
+        category,
+        description: CATEGORY_INFO[category],
+        storeCount: inCategory.length,
+        topBid,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.topBid - a.topBid ||
+        a.category.localeCompare(b.category)
+    );
 
   return (
     <div className="mx-auto max-w-2xl px-4">

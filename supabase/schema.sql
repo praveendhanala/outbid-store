@@ -28,16 +28,36 @@ create table if not exists categories (
   description text not null
 );
 
-insert into categories (id, label, description) values
+INSERT INTO categories (id, label, description) VALUES
   ('sneakers', 'Sneakers', 'Sneaker retailers, restocks, and resellers.'),
   ('fashion', 'Fashion', 'Apparel, streetwear, and accessories.'),
   ('beauty', 'Beauty', 'Skincare, cosmetics, and personal care.'),
   ('home', 'Home', 'Furniture, decor, and household goods.'),
   ('electronics', 'Electronics', 'Gadgets, accessories, and refurbished tech.'),
-  ('food', 'Food', 'Coffee, snacks, and specialty food brands.')
-on conflict (id) do update set
-  label = excluded.label,
-  description = excluded.description;
+  ('food', 'Food', 'Coffee, snacks, and specialty food brands.'),
+  ('jewelry', 'Jewelry', 'Jewelry, rings, necklaces, and accessories.'),
+  ('watches', 'Watches', 'Watches, timepieces, and watch accessories.'),
+  ('fitness', 'Fitness', 'Fitness gear, equipment, and activewear.'),
+  ('pets', 'Pets', 'Pet food, supplies, toys, and accessories.'),
+  ('kids', 'Kids', 'Kids'' clothing, products, and essentials.'),
+  ('sports', 'Sports', 'Sports equipment, apparel, and fan gear.'),
+  ('gaming', 'Gaming', 'Gaming hardware, accessories, and merchandise.'),
+  ('books', 'Books', 'Books, reading accessories, and independent publishers.'),
+  ('art', 'Art', 'Art prints, originals, and creative goods.'),
+  ('handmade', 'Handmade', 'Handcrafted products from independent makers.'),
+  ('gifts', 'Gifts', 'Gift shops, unique finds, and products for special occasions.'),
+  ('accessories', 'Accessories', 'Bags, wallets, cases, and everyday accessories.'),
+  ('health', 'Health', 'Wellness products, personal care, and health goods.'),
+  ('outdoors', 'Outdoors', 'Camping, hiking, travel, and outdoor gear.'),
+  ('automotive', 'Automotive', 'Car accessories, parts, and automotive products.'),
+  ('collectibles', 'Collectibles', 'Collectibles, memorabilia, and rare finds.'),
+  ('music', 'Music', 'Music gear, instruments, records, and merchandise.'),
+  ('office', 'Office', 'Office supplies, desk gear, and workspace products.'),
+  ('garden', 'Garden', 'Plants, gardening supplies, and outdoor living.'),
+  ('toys', 'Toys', 'Toys, games, puzzles, and kids'' entertainment.')
+ON CONFLICT (id) DO UPDATE SET
+  label = EXCLUDED.label,
+  description = EXCLUDED.description;
 
 -- One row per (store, category). A store can have between 1 and
 -- MAX_CATEGORIES_PER_STORE rows here — that limit (currently 3) is

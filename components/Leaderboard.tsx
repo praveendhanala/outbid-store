@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { MIN_BID, type Category, type Store } from "@/lib/data";
+import { CATEGORIES, MIN_BID, type Category, type Store } from "@/lib/data";
 import { formatNumber, formatUsd } from "@/lib/format";
 import { ClaimSpotForm } from "./ClaimSpotForm";
 import { CategoryPills } from "./CategoryPills";
@@ -48,6 +48,39 @@ export function Leaderboard({
 
   const leader = filtered[0];
 
+  const categoryRows = useMemo(() => {
+    return CATEGORIES.map((category) => {
+      if (category === "all") {
+        const topBid = stores.reduce(
+          (max, store) => Math.max(max, store.bid),
+          0
+        );
+
+        return {
+          category,
+          topBid,
+        };
+      }
+
+      const topBid = stores
+        .filter((store) => store.categories.includes(category))
+        .reduce((max, store) => Math.max(max, store.bid), 0);
+
+      return {
+        category,
+        topBid,
+      };
+    }).sort(
+      (a, b) =>
+        b.topBid - a.topBid ||
+        (a.category === "all"
+          ? -1
+          : b.category === "all"
+            ? 1
+            : a.category.localeCompare(b.category))
+    );
+  }, [stores]);
+
   // Store links below use plain <a> tags, not next/link's <Link>.
   // Link prefetches routes that scroll into view, which would fire the
   // /go redirect (and inflate the click count) just from being visible —
@@ -55,7 +88,7 @@ export function Leaderboard({
 
   return (
     <div id="leaderboard">
-      <CategoryPills active={category} onChange={setCategory} />
+      <CategoryPills active={category} onChange={setCategory} categories={categoryRows} />
 
       {leader && (
         <div className="my-5 rounded-xl border border-accent bg-surface p-5">
