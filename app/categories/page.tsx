@@ -15,23 +15,25 @@ export default async function CategoriesPage() {
     // A store counts toward every category it's listed under.
     const inCategory = stores.filter((s) => s.categories.includes(category));
     const topBid = inCategory.reduce((max, s) => Math.max(max, s.bid), 0);
+
     return {
       category,
       description: CATEGORY_INFO[category],
       storeCount: inCategory.length,
       topBid,
     };
-  });
+  })
+  .sort((a, b) => b.topBid - a.topBid);
 
   return (
     <div className="mx-auto max-w-2xl px-4">
       <Header />
 
-      <div className="flex flex-col items-center gap-2 py-10 text-center">
-        <h1 className="font-display text-3xl font-bold">categories</h1>
-        <p className="max-w-sm text-sm text-muted">
-          Every category is its own leaderboard. Pick one to see who&apos;s
-          #1.
+      <div className="py-10">
+        <h1 className="font-display mb-2 text-3xl font-bold">categories</h1>
+        <p className="max-w-xl text-sm text-muted">
+          Every category has a #1. Find out who. <br />
+          Pick a category to explore its leaderboard and see who's on top.
         </p>
       </div>
 
@@ -40,15 +42,17 @@ export default async function CategoriesPage() {
           <li key={category}>
             <Link
               href={`/?category=${category}`}
-              className="flex h-full flex-col justify-between rounded-xl border border-border bg-surface p-4 transition-colors hover:border-foreground/40"
+              className="flex h-full flex-col justify-between rounded-xl border border-border bg-surface p-4 transition-colors hover:border-accent/60"
             >
               <div>
                 <p className="text-sm font-semibold capitalize">{category}</p>
                 <p className="mt-1 text-xs text-muted">{description}</p>
               </div>
               <div className="mt-4 flex items-center justify-between text-xs text-muted">
-                <span>{formatNumber(storeCount)} stores</span>
-                <span className="font-mono font-semibold text-foreground">
+                <span className="font-semibold text-foreground">
+                  {formatNumber(storeCount)} stores
+                </span>
+                <span className="font-semibold text-accent">
                   {topBid > 0 ? `top ${formatUsd(topBid)}` : "no bids yet"}
                 </span>
               </div>
