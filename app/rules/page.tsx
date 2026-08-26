@@ -9,52 +9,68 @@ export default function RulesPage() {
       title="rules"
       intro="The whole mechanic in a few short rules."
     >
-      <div>
-        <h2>1. Rank is the bid</h2>
-        <p>
-          Your position on the board is determined only by how much you&apos;ve
-          bid. There&apos;s no algorithm, no review process, and no way to
-          rank higher without paying more than the store above you.
-        </p>
-      </div>
-      <div>
-        <h2>2. Outbidding is instant</h2>
-        <p>
-          Anyone can take your spot by bidding at least one dollar more than
-          your current bid. The moment a higher bid is placed, the board
-          re-sorts and your store moves down.
-        </p>
-      </div>
-      <div>
-        <h2>3. Minimum bid is {formatUsd(MIN_BID)}</h2>
-        <p>
-          New stores join the board at {formatUsd(MIN_BID)} or higher. There&apos;s
-          no maximum.
-        </p>
-      </div>
-      <div>
-        <h2>4. Bids aren&apos;t refunded when you&apos;re outbid</h2>
-        <p>
-          Once you&apos;ve paid to hold a position, that payment covers the
-          time you held it &mdash; it isn&apos;t returned if someone later
-          outbids you. See the <Link href="/terms" className="underline">terms</Link>{" "}
-          for the full payment terms.
-        </p>
-      </div>
-      <div>
-        <h2>5. One listing per store</h2>
-        <p>
-          Each domain gets one listing. If you want to move categories,
-          contact us rather than submitting a duplicate.
-        </p>
-      </div>
-      <div>
-        <h2>6. We can remove a listing</h2>
-        <p>
-          Stores that are fraudulent, illegal, or otherwise violate the{" "}
-          <Link href="/terms" className="underline">terms</Link> can be removed at
-          any time, bid or no bid.
-        </p>
+      <div className="space-y-8">
+        <section className="space-y-2">
+          <h2>1. Rank is the bid</h2>
+          <p>
+            Your position on the board is determined only by how much you&apos;ve
+            bid. There&apos;s no algorithm, review process, or popularity score.
+            To move up, you need to bid more than the store above you.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2>2. Outbidding is instant</h2>
+          <p>
+            Anyone can take your spot by bidding at least{" "}
+            <span className="font-semibold">$1 more</span> than your current bid.
+            As soon as a higher bid is placed, the leaderboard re-sorts and your
+            store moves down.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2>3. The minimum bid is $5</h2>
+          <p>
+            New stores can join the board with a bid of{" "}
+            <span className="font-semibold">$5 or more</span>. There&apos;s no
+            maximum bid.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2>4. Bids aren&apos;t refunded when you&apos;re outbid</h2>
+          <p>
+            Your payment covers the position you held while your bid was active.
+            If another store outbids you, your previous payment isn&apos;t
+            refunded. See the{" "}
+            <a href="/terms" className="underline">
+              terms
+            </a>{" "}
+            for the full payment terms.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2>5. One listing per store</h2>
+          <p>
+            Each domain gets one listing. Don&apos;t submit the same store multiple
+            times to appear in different categories. If you need to change your
+            categories, contact us instead.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2>6. We can remove a listing</h2>
+          <p>
+            We may remove stores that are fraudulent, illegal, misleading, or
+            otherwise violate our{" "}
+            <a href="/terms" className="underline">
+              terms
+            </a>
+            . A listing can be removed regardless of its current bid.
+          </p>
+        </section>
       </div>
     </PageShell>
   );
