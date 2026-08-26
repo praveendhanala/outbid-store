@@ -15,15 +15,14 @@ export default async function SubmitPage() {
       <Header />
       <div className="py-10">
         <h1 className="font-display mb-2 text-3xl font-bold">
-          claim a spot on the board
+          claim a spot
         </h1>
         <p className="mb-8 max-w-lg text-sm text-muted">
-          Pay to claim a new listing slot — your bid decides where you land,
-          not any existing store. Minimum bid is {formatUsd(MIN_BID)}. Add
-          your store&apos;s details below before paying.
+          Your bid decides where you land on the leaderboard. <br />
+          Pay to claim a new listing slot. Minimum bid is {formatUsd(MIN_BID)}.
         </p>
 
-        <div className="max-w-sm">
+        <div className="max-w-md">
           <ClaimSpotForm stores={stores} initialAmount={MIN_BID} />
         </div>
       </div>

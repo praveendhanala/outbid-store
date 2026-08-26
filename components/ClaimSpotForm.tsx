@@ -41,7 +41,7 @@ export function ClaimSpotForm({
   const preview = useMemo(() => {
     const parsed = Number(amount);
     if (!amount || Number.isNaN(parsed) || parsed <= 0) return null;
-    const ahead = stores.filter((s) => s.bid > parsed).length;
+    const ahead = stores.filter((s) => s.bid >= parsed).length;
     return { position: ahead + 1, total: stores.length + 1, amount: parsed };
   }, [amount, stores]);
 
@@ -98,7 +98,7 @@ export function ClaimSpotForm({
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3">
       <div className="flex flex-col gap-1">
-        <span className="text-xs text-muted">Your bid</span>
+        <span className="text-sm font-bold text-muted">Your bid</span>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted">$</span>
           <input
@@ -118,8 +118,7 @@ export function ClaimSpotForm({
             <span className="font-semibold text-foreground">
               #{formatNumber(preview.position)}
             </span>{" "}
-            of {formatNumber(preview.total)} — this is a snapshot of right
-            now, not a hold on the spot.
+            of {formatNumber(preview.total)}
           </p>
         )}
       </div>
@@ -131,31 +130,33 @@ export function ClaimSpotForm({
           value={email}
           disabled={isSubmitting}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@store.com"
+          placeholder=""
           className="w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40 disabled:opacity-60"
         />
       </label>
 
       <div className="flex flex-col gap-3 rounded-md border border-border bg-background p-3">
-        <p className="text-xs text-muted">
-          Store details — required before payment.
+        <p className="text-sm font-bold text-muted">
+          Store details
         </p>
         <CharLimitedField
           label="Store name"
           value={name}
           onChange={setName}
-          placeholder="Sneaker Hub"
+          placeholder=""
           maxLength={STORE_NAME_MAX_LENGTH}
           disabled={isSubmitting}
+          showlength={false}
         />
         <CharLimitedField
-          label="Domain"
+          label="Website"
           value={domain}
           onChange={setDomain}
-          placeholder="sneakerhub.com"
+          placeholder=""
           maxLength={STORE_DOMAIN_MAX_LENGTH}
           disabled={isSubmitting}
-          hint="no https:// needed"
+          showlength={false}
+          //hint="no https:// needed"
         />
         <div className="flex flex-col gap-1.5">
           <span className="text-xs text-muted">
@@ -191,6 +192,7 @@ export function ClaimSpotForm({
           maxLength={STORE_DESCRIPTION_MAX_LENGTH}
           disabled={isSubmitting}
           multiline
+          showlength={true}
         />
       </div>
 
@@ -200,7 +202,7 @@ export function ClaimSpotForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="flex-1 rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 cursor-pointer"
         >
           {isSubmitting ? "starting checkout..." : "continue to payment"}
         </button>
@@ -209,7 +211,7 @@ export function ClaimSpotForm({
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="shrink-0 rounded-md border border-border px-3 py-2.5 text-sm text-muted transition-colors hover:text-foreground disabled:opacity-60"
+            className="shrink-0 rounded-md border border-border px-3 py-2.5 text-sm text-muted transition-colors hover:text-foreground disabled:opacity-60 cursor-pointer"
           >
             cancel
           </button>
@@ -228,6 +230,7 @@ function CharLimitedField({
   disabled,
   multiline,
   hint,
+  showlength,
 }: {
   label: string;
   value: string;
@@ -237,6 +240,7 @@ function CharLimitedField({
   disabled: boolean;
   multiline?: boolean;
   hint?: string;
+  showlength?: boolean;
 }) {
   const sharedClassName =
     "w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40 disabled:opacity-60";
@@ -245,9 +249,12 @@ function CharLimitedField({
     <label className="flex flex-col gap-1">
       <span className="flex items-center justify-between text-xs text-muted">
         <span>{label}</span>
-        <span>
-          {value.length}/{maxLength}
-        </span>
+        { showlength && (
+          <span>
+            {value.length}/{maxLength}
+          </span>
+        )}
+
       </span>
       {multiline ? (
         <textarea
