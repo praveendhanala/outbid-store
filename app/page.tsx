@@ -28,9 +28,9 @@ export default async function Home({
 
       <div className="flex flex-col items-center gap-3 py-10 text-center">
         {/* <StatsTicker startingVisitors={48210} online={312} /> */}
-        <h1 className="font-display text-4xl font-bold">outbid.store</h1>
+        <h1 className="font-display text-4xl font-bold">Put your Store in the spotlight</h1>
         <p className="max-w-sm text-sm font-bold text-muted">
-          Outbid your competitors. Own the <span className="font-mono text-md font-bold text-accent">#1</span> spot.
+          Own the <span className="font-mono text-md font-bold text-accent">#1</span> spot. More visibility. More attention.
         </p>
       </div>
 
