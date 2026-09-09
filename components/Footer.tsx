@@ -2,6 +2,7 @@ import Link from "next/link";
 
 const LINKS: { href: string; label: string }[] = [
   { href: "/about", label: "about" },
+  { href: "https://puzznest.com/", label: "puzzles" },
   { href: "/rules", label: "rules" },
   { href: "/faqs", label: "faqs" },
   { href: "/terms", label: "terms" },
